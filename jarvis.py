@@ -17,6 +17,8 @@ import sys
 import platform
 from collections import defaultdict
 
+# --- Voice Dependencies (install if needed) ---
+# pip install pyttsx3 SpeechRecognition pyaudio
 try:
     import pyttsx3
     TTS_AVAILABLE = True
@@ -85,8 +87,8 @@ class VoiceEngine:
         if not self.tts_enabled:
             return
         try:
-            clean = re.sub(r"[=\\\\-\\\\[\\\\]|{}_*#>]", " ", text)
-            clean = re.sub(r"\\s+", " ", clean).strip()
+            clean = re.sub(r"[=\-\[\]|{}_*#>]", " ", text)
+            clean = re.sub(r"\s+", " ", clean).strip()
             if clean:
                 self.engine.say(clean)
                 self.engine.runAndWait()
@@ -196,24 +198,24 @@ class MathEngine:
 
 class KnowledgeBase:
     FACTS = {
-        "sun": "The Sun is a G-type main-sequence star accounting for 99.86% of our Solar System's mass. Surface temp: ~5,778 K.",
-        "earth": "Earth is the third planet from the Sun, the only known planet to harbor life. ~4.54 billion years old.",
+        "sun": "The Sun is a G-type main-sequence star. Surface temp: ~5,778 K.",
+        "earth": "Earth is the third planet from the Sun. ~4.54 billion years old.",
         "moon": "The Moon is Earth's only natural satellite and the 5th largest in the Solar System.",
-        "mars": "Mars is the 4th planet from the Sun, known as the Red Planet. It has two moons: Phobos and Deimos.",
-        "python": "Python is a high-level language created by Guido van Rossum in 1991. Known for readability and versatility.",
-        "ai": "AI is the simulation of human intelligence by machines. The field was founded in 1956 at Dartmouth College.",
-        "jarvis": "J.A.R.V.I.S. = Just A Rather Very Intelligent System. Created by Tony Stark in the Marvel Universe.",
-        "iron man": "Tony Stark / Iron Man: Marvel superhero, genius inventor. First appeared in Tales of Suspense #39 (1963).",
-        "quantum": "Quantum mechanics describes nature at atomic/subatomic scales. Key: superposition, entanglement, wave-particle duality.",
-        "space": "The observable universe is ~93 billion light-years across, containing ~2 trillion galaxies.",
-        "dna": "DNA carries genetic instructions for all known life. Double helix discovered by Watson & Crick in 1953.",
-        "gravity": "One of 4 fundamental forces. Einstein's relativity: curvature of spacetime by mass. Earth: ~9.81 m/s^2.",
-        "internet": "Originated from ARPANET (1960s). WWW invented by Tim Berners-Lee in 1989. 5+ billion users today.",
-        "tesla": "Nikola Tesla (1856-1943): Serbian-American inventor. Pioneered AC power, Tesla coil, radio technology.",
-        "einstein": "Albert Einstein (1879-1955): Theoretical physicist. E=mc^2, general relativity, photoelectric effect. Nobel Prize 1921.",
-        "black hole": "A region of spacetime where gravity is so strong nothing can escape. First image captured in 2019 by EHT.",
-        "blockchain": "A distributed ledger technology. Each block contains a cryptographic hash of the previous block.",
-        "machine learning": "A subset of AI where systems learn from data without explicit programming. Types: supervised, unsupervised, reinforcement.",
+        "mars": "Mars is the 4th planet from the Sun, known as the Red Planet.",
+        "python": "Python is a high-level language created by Guido van Rossum in 1991.",
+        "ai": "AI is the simulation of human intelligence by machines. Founded 1956.",
+        "jarvis": "J.A.R.V.I.S. = Just A Rather Very Intelligent System. Created by Tony Stark.",
+        "iron man": "Tony Stark / Iron Man: Marvel superhero, genius inventor.",
+        "quantum": "Quantum mechanics describes nature at atomic/subatomic scales.",
+        "space": "The observable universe is ~93 billion light-years across.",
+        "dna": "DNA carries genetic instructions for all known life. Discovered 1953.",
+        "gravity": "One of 4 fundamental forces. Earth: ~9.81 m/s^2.",
+        "internet": "Originated from ARPANET (1960s). WWW invented by Tim Berners-Lee in 1989.",
+        "tesla": "Nikola Tesla (1856-1943): Pioneered AC power, Tesla coil, radio technology.",
+        "einstein": "Albert Einstein (1879-1955): E=mc^2, general relativity. Nobel Prize 1921.",
+        "black hole": "A region where gravity is so strong nothing can escape. First image 2019.",
+        "blockchain": "A distributed ledger technology using cryptographic hashes.",
+        "machine learning": "A subset of AI where systems learn from data. Types: supervised, unsupervised, reinforcement.",
     }
 
     QUOTES = [
@@ -336,7 +338,7 @@ class ConversationAI:
     def respond(self, text):
         t = text.lower().strip()
 
-        m = re.search(r"my name is (\\w+)", t)
+        m = re.search(r"my name is (\w+)", t)
         if m:
             name = m.group(1).capitalize()
             self.memory["name"] = name
@@ -350,7 +352,7 @@ class ConversationAI:
             ])
 
         if re.search(r"(what can you do|help|commands|abilities)", t):
-            lines = [
+            lines_out = [
                 "",
                 f"=== {ASSISTANT_NAME} CAPABILITIES v{VERSION} ===",
                 "CONVERSATION  - Talk to me naturally",
@@ -370,7 +372,7 @@ class ConversationAI:
                 "EXIT          - goodbye / quit",
                 "===============================================",
             ]
-            return "\n".join(lines)
+            return "\n".join(lines_out)
 
         if re.search(r"(who made you|who created you)", t):
             return "I was built as a tribute to Tony Stark's vision. Helpful, intelligent, slightly sarcastic."
@@ -431,7 +433,7 @@ class CommandProcessor:
 
         # System diagnostics
         if any(w in cl for w in ["system status", "diagnostics", "sys info"]):
-            lines = [
+            diag_lines = [
                 "",
                 "======= SYSTEM DIAGNOSTICS =======",
                 "Platform:  " + platform.system() + " " + platform.release(),
@@ -444,22 +446,21 @@ class CommandProcessor:
                 "Status:    ALL SYSTEMS NOMINAL",
                 "==================================",
             ]
-            return "\n".join(lines)
+            return "\n".join(diag_lines)
 
         # Math
         if cl.startswith("calc ") or cl.startswith("calculate "):
             return self.math.evaluate(cl.replace("calculate ", "").replace("calc ", ""))
 
         # Unit Conversion
-        m = re.match(r"convert\\s+([\\d.]+)\\s+(\\w+)\\s+to\\s+(\\w+)", cl)
+        m = re.match(r"convert\s+([\d.]+)\s+(\w+)\s+to\s+(\w+)", cl)
         if m:
             return self.math.unit_convert(float(m.group(1)), m.group(2), m.group(3))
-
         # Tasks
         if cl.startswith("add task "):
             txt = cmd[9:].strip()
             p = "high" if "[high]" in cl else "low" if "[low]" in cl else "normal"
-            txt = re.sub(r"\\[(high|low)\\]", "", txt, flags=re.I).strip()
+            txt = re.sub(r"\[(high|low)\]", "", txt, flags=re.I).strip()
             return self.tasks.add_task(txt, p)
 
         if cl in ["list tasks", "show tasks", "tasks", "todo"]:
@@ -474,7 +475,7 @@ class CommandProcessor:
         # Notes
         if cl.startswith("note "):
             txt = cmd[5:].strip()
-            cat_m = re.match(r"\\[(.+?)\\]\\s*(.+)", txt)
+            cat_m = re.match(r"\[(.+?)\]\s*(.+)", txt)
             if cat_m:
                 return self.notes.add(cat_m.group(2), cat_m.group(1))
             return self.notes.add(txt)
@@ -487,7 +488,7 @@ class CommandProcessor:
 
         # Security
         if any(w in cl for w in ["generate password", "new password"]):
-            ln = re.search(r"(\\d+)", cl)
+            ln = re.search(r"(\d+)", cl)
             return self.security.generate_password(min(int(ln.group(1)), 128) if ln else 16)
 
         if cl.startswith("hash "):
@@ -507,18 +508,17 @@ class CommandProcessor:
         # Quotes
         if any(w in cl for w in ["quote", "inspire", "wisdom"]):
             return KnowledgeBase.get_quote()
-
         # Fun
         if any(w in cl for w in ["flip a coin", "coin flip", "heads or tails"]):
             return "*flips coin* ... " + random.choice(["Heads", "Tails"]) + "!"
 
         if "roll" in cl:
-            dm = re.search(r"d(\\d+)", cl)
+            dm = re.search(r"d(\d+)", cl)
             s = int(dm.group(1)) if dm else 6
             return "*rolls d" + str(s) + "* ... You got a " + str(random.randint(1, s)) + "!"
 
         if cl.startswith("random number"):
-            nums = re.findall(r"(\\d+)", cl)
+            nums = re.findall(r"(\d+)", cl)
             if len(nums) >= 2:
                 return "Random: " + str(random.randint(int(nums[0]), int(nums[1])))
             return "Random: " + str(random.randint(1, 100))
@@ -615,7 +615,6 @@ class Jarvis:
 
         if self.voice_output:
             self.voice.speak(greeting)
-
     def handle_voice_commands(self, cl):
         """Handle voice-related commands. Returns a response string or None."""
         if cl in ["voice on", "enable voice", "speak on", "tts on"]:
@@ -646,7 +645,6 @@ class Jarvis:
             return "TTS: " + tts_s + " (" + tts_a + ") | STT: " + stt_s + " (" + stt_a + ")"
 
         return None
-
     def run(self):
         self.running = True
         self.boot()
